@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "aoc22"
+version = "0.1.0"
+description = ""
+authors = ["Martin Billinger <mbillingr@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+numpy = "^1.23.5"
+scipy = "^1.9.3"
+matplotlib = "^3.6.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
