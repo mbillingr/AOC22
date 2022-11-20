@@ -1,9 +1,14 @@
+import abc
 from datetime import datetime
 
 
-class Puzzle:
+class Puzzle(abc.ABC):
     def __init__(self, name):
         self.name = name
+
+    @abc.abstractmethod
+    def solve(self, inputlines):
+        """compute puzzle solution"""
 
     def check(self, input, expected):
         start = datetime.now()
