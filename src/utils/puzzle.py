@@ -1,5 +1,6 @@
 import abc
 from datetime import datetime
+from typing import Any, Optional, Tuple
 
 
 class Puzzle(abc.ABC):
@@ -7,26 +8,29 @@ class Puzzle(abc.ABC):
         self.name = name
 
     @abc.abstractmethod
-    def solve(self, inputlines):
+    def solve(self, parsed_input: Any) -> Any:
         """compute puzzle solution"""
 
-    def check(self, input, expected):
+    @abc.abstractmethod
+    def parse(self, input: str) -> Any:
+        """convert result from string to something the solver understands"""
+
+    def check(self, input: str, expected: Any):
         start = datetime.now()
-        result = self.solve(iter(input.splitlines()))
+        result = self.solve(self.parse(input))
         if result == expected:
             print(f"{datetime.now() - start} -- OK  {result}")
         else:
             raise AssertionError(f"expected {expected}, got {result}")
 
-    def run(self, filename=None, wrong=()):
+    def run(self, filename: Optional[str] = None, wrong: Tuple[Any, ...] = ()):
         start = datetime.now()
         if filename is not None:
             with open(filename, "rt") as f:
-                lines = (l.strip("\n") for l in f)
-                result = self.solve(lines)
+                input_str = f.read()
         else:
-            lines = iter("")
-            result = self.solve(lines)
+            input_str = ""
+        result = self.solve(self.parse(input_str))
 
         if result in wrong:
             raise AssertionError(f"wrong result: {result}")
