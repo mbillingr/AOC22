@@ -1,4 +1,3 @@
-import utils
 from utils.puzzle import Puzzle
 
 print("Hello, Advent!")
@@ -17,4 +16,4 @@ class MyPuzzle(Puzzle):
 
 pz = MyPuzzle()
 pz.check("1 2 3", 6)
-pz.run("data/testin.txt")
+pz.run("../data/testin.txt")
