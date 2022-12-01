@@ -41,7 +41,7 @@ class Parser(abc.ABC):
         return NotImplemented
 
 
-def as_parser(obj) -> Parser:
+def as_parser(obj: Parser | str) -> Parser:
     match obj:
         case Parser():
             return obj
@@ -222,7 +222,7 @@ class Transform(Parser):
 class Drop(Transform):
     """Drop a parser's result"""
 
-    def __init__(self, parser: Parser):
+    def __init__(self, parser: Parser | str):
         parser = as_parser(parser)
         super().__init__(_empty, parser)
 
@@ -285,7 +285,7 @@ class String(Transform):
 
 @dataclass
 class SeparatedList(Alternative):
-    def __init__(self, item: Parser, separator: Parser):
+    def __init__(self, item: Parser, separator: Parser | str):
         super().__init__(
             Sequence(
                 item,
