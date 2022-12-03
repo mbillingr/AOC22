@@ -1,20 +1,58 @@
+require "./utils/puzzle"
+
 raw_data = File.read("../data/input01.txt")
 
-def parse_input(raw_data)
-  raw_data
-    .split("\n\n")
-    .map { |blk| to_numbers(blk) }
+class Day < Puzzle
+  @day = "Day 01"
+
+  def parse(input)
+    input
+      .split("\n\n")
+      .map { |blk| blk
+        .split("\n")
+        .select { |x| x != "" }
+        .map { |x| x.to_i } }
+      .map { |blk| blk.sum }
+  end
 end
 
-def to_numbers(blk)
-  blk.split("\n")
-    .select { |x| x != "" }
-    .map { |x| x.to_i }
+class Part1 < Day
+  @part = "Part 1"
+
+  def solve(data)
+    data
+      .max
+  end
 end
 
-totals = parse_input(raw_data)
-  .map { |blk| blk.sum }
+class Part2 < Day
+  @part = "Part 2"
 
-printf "Day 01/1: %d\n", totals.max
+  def solve(data)
+    data
+      .sort[-3, 3]
+      .sum
+  end
+end
 
-printf "Day 01/2: %d\n", totals.sort[-3, 3].sum
+Part1.new.check(EXAMPLE, 24000)
+Part1.new.run(raw_data)
+
+Part2.new.check(EXAMPLE, 45000)
+Part2.new.run(raw_data)
+
+EXAMPLE = "1000
+2000
+3000
+
+4000
+
+5000
+6000
+
+7000
+8000
+9000
+
+10000
+"
