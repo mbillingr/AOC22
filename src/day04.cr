@@ -10,7 +10,9 @@ class Day < Puzzle
       .split("\n")
       .select { |x| x != "" }
       .map do |row|
-        row.split(",").map { |rng| rng.split("-").map(&.to_i) }
+        row.split(",")
+          .map { |rng| rng.split("-").map(&.to_i) }
+          .map { |pair| Interval.new(pair[0], pair[1]) }
       end
   end
 end
@@ -21,7 +23,7 @@ class Part1 < Day
   def solve(data)
     data
       .select do |pair|
-        fully_overlaps?(pair[0], pair[1]) || fully_overlaps?(pair[1], pair[0])
+        pair[0].fully_overlaps?(pair[1]) || pair[1].fully_overlaps?(pair[0])
       end
       .size
   end
@@ -33,18 +35,23 @@ class Part2 < Day
   def solve(data)
     data
       .select do |pair|
-        overlaps?(pair[0], pair[1]) || overlaps?(pair[1], pair[0])
+        pair[0].overlaps?(pair[1]) || pair[1].overlaps?(pair[0])
       end
       .size
   end
 end
 
-def fully_overlaps?(rng1, rng2)
-  rng1[0] >= rng2[0] && rng1[1] <= rng2[1]
-end
+class Interval
+  def initialize(@first : Int32, @last : Int32)
+  end
 
-def overlaps?(rng1, rng2)
-  rng1[0] <= rng2[1] && rng1[1] >= rng2[1] || rng1[0] <= rng2[0] && rng1[1] >= rng2[0]
+  def fully_overlaps?(other : Interval)
+    @first >= other.@first && @last <= other.@last
+  end
+
+  def overlaps?(other : Interval)
+    @first <= other.@first && @last >= other.@first || @first <= other.@last && @last >= other.@last
+  end
 end
 
 raw_data = File.read(__DIR__ + "/../data/input#{DAY}.txt")
