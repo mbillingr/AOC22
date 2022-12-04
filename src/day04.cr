@@ -1,6 +1,6 @@
 require "./utils/puzzle"
 
-DAY = "XX"
+DAY = "04"
 
 class Day < Puzzle
   @day = "Day #{DAY}"
@@ -9,6 +9,9 @@ class Day < Puzzle
     input
       .split("\n")
       .select { |x| x != "" }
+      .map do |row|
+        row.split(",").map { |rng| rng.split("-").map(&.to_i) }
+      end
   end
 end
 
@@ -16,8 +19,13 @@ class Part1 < Day
   @part = "Part 1"
 
   def solve(data)
-    puts data
+    data.select { |pair| fully_overlaps?(pair[0], pair[1]) }
+      .size
   end
+end
+
+def fully_overlaps?(rng1, rng2)
+  rng1[0] >= rng2[0] && rng1[1] <= rng2[1] || rng2[0] >= rng1[0] && rng2[1] <= rng1[1]
 end
 
 class Part2 < Day
@@ -30,12 +38,16 @@ end
 
 raw_data = File.read(__DIR__ + "/../data/input#{DAY}.txt")
 
-Part1.new.check(EXAMPLE, "expected")
+Part1.new.check(EXAMPLE, 2)
 Part1.new.run(raw_data)
 
 Part2.new.check(EXAMPLE, "expected")
 Part2.new.run(raw_data)
 
-EXAMPLE = "ABC
-XYZ
+EXAMPLE = "2-4,6-8
+2-3,4-5
+5-7,7-9
+2-8,3-7
+6-6,4-6
+2-6,4-8
 "
