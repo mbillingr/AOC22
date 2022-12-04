@@ -26,7 +26,7 @@ class Part2 < Day
   end
 end
 
-raw_data = File.read("../data/input01.txt")
+raw_data = File.read(__DIR__ + "/../data/input01.txt")
 
 Part1.new.check(EXAMPLE, "expected")
 Part1.new.run(raw_data)

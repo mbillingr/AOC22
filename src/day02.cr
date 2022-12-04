@@ -62,7 +62,7 @@ def score(p1, p2)
   score
 end
 
-raw_data = File.read("../data/input02.txt")
+raw_data = File.read(__DIR__ + "/../data/input02.txt")
 
 Part1.new.check(EXAMPLE, 15)
 Part1.new.run(raw_data)

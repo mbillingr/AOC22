@@ -1,6 +1,6 @@
 require "./utils/puzzle"
 
-raw_data = File.read("../data/input01.txt")
+raw_data = File.read(__DIR__ + "/../data/input01.txt")
 
 class Day < Puzzle
   @day = "Day 01"

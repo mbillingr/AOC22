@@ -63,7 +63,7 @@ def priority(ch)
   end
 end
 
-raw_data = File.read("../data/input03.txt")
+raw_data = File.read(__DIR__ + "/../data/input03.txt")
 
 Part1.new.check(EXAMPLE, 157)
 Part1.new.run(raw_data)
