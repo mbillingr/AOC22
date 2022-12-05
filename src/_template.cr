@@ -2,6 +2,15 @@ require "./utils/puzzle"
 
 DAY = "XX"
 
+raw_data = File.read(__DIR__ + "/../data/input#{DAY}.txt")
+
+Part1.new.check(EXAMPLE, "expected")
+Part1.new.run(raw_data)
+
+Part2.new.check(EXAMPLE, "expected")
+Part2.new.run(raw_data)
+
+
 class Day < Puzzle
   @day = "Day #{DAY}"
 
@@ -27,14 +36,6 @@ class Part2 < Day
     puts data
   end
 end
-
-raw_data = File.read(__DIR__ + "/../data/input#{DAY}.txt")
-
-Part1.new.check(EXAMPLE, "expected")
-Part1.new.run(raw_data)
-
-Part2.new.check(EXAMPLE, "expected")
-Part2.new.run(raw_data)
 
 EXAMPLE = "ABC
 XYZ
