@@ -17,8 +17,8 @@ class Part1 < Day
   def solve(data)
     data
       .map { |round|
-        p1 = round[0]
-        p2 = {"X" => "A", "Y" => "B", "Z" => "C"}[round[1]]
+        p1, p2 = round
+        p2 = {"X" => "A", "Y" => "B", "Z" => "C"}[p2]
         score p1, p2
       }
       .sum
@@ -31,7 +31,7 @@ class Part2 < Day
   def solve(data)
     data
       .map { |round|
-        p1 = round[0]
+        p1, _ = round
         p2 = {
           ["A", "X"] => "C",
           ["B", "X"] => "A",
@@ -51,12 +51,12 @@ end
 
 def score(p1, p2)
   score = {"A" => 1, "B" => 2, "C" => 3}[p2]
-  case [p1, p2]
-  when ["A", "C"], ["B", "A"], ["C", "B"]
+  case {p1, p2}
+  when {"A", "C"}, {"B", "A"}, {"C", "B"}
     score += 0
-  when ["A", "A"], ["B", "B"], ["C", "C"]
+  when {"A", "A"}, {"B", "B"}, {"C", "C"}
     score += 3
-  when ["A", "B"], ["B", "C"], ["C", "A"]
+  when {"A", "B"}, {"B", "C"}, {"C", "A"}
     score += 6
   end
   score

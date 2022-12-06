@@ -35,7 +35,7 @@ class Parser
   def parse_crates
     crates = [] of Array(Char)
     while !@rows[0].starts_with?(" 1")
-      crates << @rows[0][1..].chars.each_slice(4).map { |slice| slice[0] }.to_a
+      crates << @rows[0][1..].chars.each_slice(4).map(&.first).to_a
       @rows = @rows[1..]
     end
 
@@ -51,18 +51,13 @@ class Parser
   end
 
   def parse_index
-    index = @rows[0][1..].chars.each_slice(4).map { |slice| slice[0].to_i - 1 }.to_a
     @rows = @rows[1..]
-    index
   end
 
   def parse_moves
     @rows.map do |row|
-      cmd = row.split
-      n = cmd[1].to_i
-      src = cmd[3].to_i - 1
-      dst = cmd[5].to_i - 1
-      {n, src, dst}
+      _, n, _, src, _, dst = row.split
+      {n.to_i, src.to_i - 1, dst.to_i - 1}
     end
   end
 end
@@ -71,21 +66,17 @@ class Part1 < Day
   @part = "Part 1"
 
   def solve(data)
-    p = Parser.new(data).parse_puzzle
-    stacks = p[0]
-    cmds = p[1]
+    stacks, cmds = Parser.new(data).parse_puzzle
 
     cmds.each do |cmd|
-      n, src, dst = cmd[0], cmd[1], cmd[2]
+      n, src, dst = cmd
       n.times do
         crate = stacks[src].pop
         stacks[dst].push(crate)
       end
     end
 
-    stacks
-      .map { |stack| stack.last }
-      .join
+    stacks.map(&.last).join
   end
 end
 
@@ -93,19 +84,15 @@ class Part2 < Day
   @part = "Part 2"
 
   def solve(data)
-    p = Parser.new(data).parse_puzzle
-    stacks = p[0]
-    cmds = p[1]
+    stacks, cmds = Parser.new(data).parse_puzzle
 
     cmds.each do |cmd|
-      n, src, dst = cmd[0], cmd[1], cmd[2]
+      n, src, dst = cmd
       stacks[dst] += stacks[src][-n..]
       stacks[src].pop(n)
     end
 
-    stacks
-      .map { |stack| stack.last }
-      .join
+    stacks.map(&.last).join
   end
 end
 

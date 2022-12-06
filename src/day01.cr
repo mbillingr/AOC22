@@ -30,7 +30,7 @@ class Part2 < Day
 
   def solve(data)
     data
-      .sort[-3, 3]
+      .sort[-3..]
       .sum
   end
 end

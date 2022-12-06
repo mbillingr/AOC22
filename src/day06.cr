@@ -21,8 +21,7 @@ class Day < Puzzle
   @day = "Day #{DAY}"
 
   def parse(input)
-    input
-      .split("\n")[0]
+    input.split("\n").first
   end
 
   def solve(data)

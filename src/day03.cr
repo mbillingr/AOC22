@@ -18,14 +18,13 @@ class Part1 < Day
     data
       .map { |chars|
         n = chars.size // 2
-        left = chars[0, n].to_set
-        right = chars[n, n].to_set
-        [left, right]
+        left = chars[...n].to_set
+        right = chars[n..].to_set
+        {left, right}
       }
       .map { |bag|
-        left = bag[0]
-        right = bag[1]
-        (left & right).to_a[0]
+        left, right = bag
+        (left & right).first
       }
       .map { |ch| priority(ch) }
       .sum
@@ -40,16 +39,14 @@ class Part2 < Day
       .map { |chars| chars.to_set }
       .in_groups_of(3)
       .map { |group|
-        a = group[0]
-        b = group[1]
-        c = group[2]
+        a, b, c = group
         if a && b && c
           a & b & c
         else
           Set(Char).new
         end
       }
-      .map { |item| item.to_a[0] }
+      .map { |item| item.first }
       .map { |ch| priority(ch) }
       .sum
   end
