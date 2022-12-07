@@ -20,32 +20,37 @@ class Day < Puzzle
       .map &.split
   end
 
-  def build_tree(rows, subtree, root)
+  def build_tree(rows, subtree)
     cmd = rows.shift
 
     if matches(cmd, ["$", "cd", "/"])
-      return build_tree rows, root, root
+      parent = subtree.parent
+      while parent
+        subtree = parent
+        parent = subtree.parent
+      end
+      return build_tree rows, subtree
     end
 
     if matches(cmd, ["$", "cd", ".."])
       parent = subtree.parent
       if parent
-        return build_tree rows, parent, root
+        return build_tree rows, parent
       end
     end
 
     if matches(cmd, ["$", "cd", :_])
-      return build_tree rows, subtree.cd(cmd[2]), root
+      return build_tree rows, subtree.cd(cmd[2])
     end
 
     if matches(cmd, ["$", "ls"])
-      return listing rows, subtree, root
+      return listing rows, subtree
     end
 
     raise "Unkown command: #{cmd}"
   end
 
-  def listing(rows, subtree, root)
+  def listing(rows, subtree)
     while rows[0][0] != "$"
       row = rows.shift
 
@@ -64,7 +69,7 @@ class Day < Puzzle
       end
     end
 
-    build_tree(rows, subtree, root)
+    build_tree(rows, subtree)
   end
 
   def matches(inp, ref)
@@ -82,7 +87,7 @@ class Part1 < Day
 
   def solve(data)
     root = TDir.new nil
-    build_tree data, root, root
+    build_tree data, root
 
     sizes = [] of Int64
     root.cumulative_size(sizes)
@@ -98,7 +103,7 @@ class Part2 < Day
 
   def solve(data)
     root = TDir.new nil
-    build_tree data, root, root
+    build_tree data, root
 
     sizes = [] of Int64
     root.cumulative_size(sizes)
