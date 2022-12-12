@@ -35,6 +35,10 @@ struct Vec2
     end
   end
 
+  def one_norm
+    @x.abs + @y.abs
+  end
+
   def squared_norm
     @x * @x + @y * @y
   end

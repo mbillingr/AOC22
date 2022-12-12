@@ -4,18 +4,21 @@ require "math"
 
 DAY = "12"
 
+INF = 2u32 ** 31
+
 raw_data = File.read(__DIR__ + "/../data/input#{DAY}.txt")
 
 Part1.new.check(EXAMPLE, 31)
 Part1.new.run(raw_data)
 
-Part2.new.check(EXAMPLE, "expected")
+Part2.new.check(EXAMPLE, 29)
 Part2.new.run(raw_data)
 
 class Day < Puzzle
   @day = "Day #{DAY}"
   @start : Vec2 = Vec2.new(0, 0)
   @target : Vec2 = Vec2.new(0, 0)
+  @grid : Array(Array(Char)) = [] of Array(Char)
 
   def parse(input)
     grid = input
@@ -36,34 +39,26 @@ class Day < Puzzle
       end
     end
 
-    # grid.map { |row| row.map { |x| x - 'a' } }
-    grid
+    @grid = grid
+  end
+
+  def edge_weight(current, neighbor)
+    if neighbor.x < 0 || neighbor.x >= @grid.size || neighbor.y < 0 || neighbor.y >= @grid[0].size
+      return INF
+    end
+    if current.x < 0 || current.x >= @grid.size || current.y < 0 || current.y >= @grid[0].size
+      return INF
+    end
+    @grid[neighbor.x][neighbor.y] - @grid[current.x][current.y]
   end
 end
 
 class Part1 < Day
   @part = "Part 1"
-  @grid : Array(Array(Char)) = [] of Array(Char)
 
   def solve(data)
-    @grid = data
-
-    # TODO
-    #  breath_first may work?
-    #  what's wrong with A*?
-
-    path = breath_first(@start)
+    path = a_star
     return path.size - 1
-    # path = a_star
-    (0...@grid.size).each do |i|
-      row = @grid[i]
-      (0...row.size).each do |j|
-        print row[j]
-        print " "
-      end
-      puts
-      puts
-    end
   end
 
   def breath_first(start)
@@ -91,10 +86,10 @@ class Part1 < Day
     open_set = [@start].to_set
     came_from = {} of Vec2 => Vec2
 
-    g_score = Hash(Vec2, Int64).new(999999999999)
+    g_score = Hash(Vec2, Int64).new(INF)
     g_score[@start] = 0
 
-    f_score = Hash(Vec2, Float64).new(999999999999)
+    f_score = Hash(Vec2, Float64).new(INF)
     f_score[@start] = heuristic(@start)
 
     while !open_set.empty?
@@ -103,32 +98,21 @@ class Part1 < Day
         return reconstruct_path(came_from, current)
       end
 
-      # puts "LOOP", open_set, current, f_score, g_score
-
       open_set.delete(current)
       f_score.delete(current)
-      current.neighbors.each do |neighbor|
-        w = edge_weight(current, neighbor)
-        if w > 1
-          next
+      current.neighbors
+        .select { |n| edge_weight(current, n) <= 1 }
+        .each do |neighbor|
+          tentative_gscore = g_score[current] + 1
+          if tentative_gscore < g_score[neighbor]
+            came_from[neighbor] = current
+            g_score[neighbor] = tentative_gscore
+            f_score[neighbor] = tentative_gscore + heuristic(neighbor)
+            open_set.add neighbor
+          end
         end
-        tentative_gscore = g_score[current] + w
-        if tentative_gscore < g_score[neighbor]
-          came_from[neighbor] = current
-          g_score[neighbor] = tentative_gscore
-          f_score[neighbor] = tentative_gscore + heuristic(neighbor)
-          open_set.add neighbor
-        end
-      end
     end
     raise "No path found"
-  end
-
-  def edge_weight(current, neighbor)
-    if neighbor.x < 0 || neighbor.x >= @grid.size || neighbor.y < 0 || neighbor.y >= @grid[0].size
-      return 999
-    end
-    @grid[neighbor.x][neighbor.y] - @grid[current.x][current.y]
   end
 
   def heuristic(pos)
@@ -149,7 +133,76 @@ class Part2 < Day
   @part = "Part 2"
 
   def solve(data)
-    puts data
+    @grid = data
+
+    distances = dijkstra(@target)
+
+    min_dist = INF
+    (0...@grid.size).each do |i|
+      row = @grid[i]
+      (0...row.size).each do |j|
+        d = distances[Vec2.new(i, j)]
+        if @grid[i][j] == 'a'
+          if d < min_dist
+            min_dist = d
+          end
+          print "("
+        else
+          print " "
+        end
+        if d == INF
+          print "-"
+        else
+          print @grid[i][j]
+        end
+        if @grid[i][j] == 'a'
+          print ")"
+        else
+          print " "
+        end
+      end
+      puts
+    end
+
+    min_dist
+  end
+
+  def dijkstra(start)
+    inf = 2u32 ** 31
+    visited = Set(Vec2).new
+    unvisited = [start].to_set
+    distances = Hash(Vec2, UInt32).new(inf)
+    distances[start] = 0
+
+    current = start
+    while true
+      d = distances[current] + 1
+      current.neighbors
+        .select { |n| edge_weight(n, current) <= 1 }
+        .each do |neighbor|
+          if d < distances[neighbor]
+            distances[neighbor] = d
+          end
+
+          if !visited.includes? neighbor
+            unvisited.add neighbor
+          end
+        end
+      visited.add current
+      unvisited.delete current
+
+      d = inf
+      unvisited.each do |node|
+        if distances[node] < d
+          current = node
+          d = distances[node]
+        end
+      end
+
+      if d >= inf
+        return distances
+      end
+    end
   end
 end
 
