@@ -5,6 +5,8 @@ class Puzzle
       p result
       p expected
       raise "wrong output"
+    else
+      puts "OK"
     end
   end
 
