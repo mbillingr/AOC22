@@ -1,4 +1,3 @@
-
 struct Vec2
   getter x : Int64
   getter y : Int64
@@ -36,6 +35,10 @@ struct Vec2
     end
   end
 
+  def squared_norm
+    @x * @x + @y * @y
+  end
+
   def box_normalize
     if @x > 1
       @x = 1
@@ -50,5 +53,14 @@ struct Vec2
     end
 
     Vec2.new(@x, @y)
+  end
+
+  def neighbors
+    return [
+      Vec2.new(@x+1, @y),
+      Vec2.new(@x-1, @y),
+      Vec2.new(@x, @y+1),
+      Vec2.new(@x, @y-1),
+    ]
   end
 end
