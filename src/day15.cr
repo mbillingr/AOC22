@@ -8,8 +8,8 @@ raw_data = File.read(__DIR__ + "/../data/input#{DAY}.txt")
 Part1.new.select_row(10).check(EXAMPLE, 26)
 Part1.new.select_row(2000000).run(raw_data)
 
-Part2.new.check(EXAMPLE, "expected")
-Part2.new.run(raw_data)
+Part2.new.limit(20).check(EXAMPLE, 56000011)
+Part2.new.limit(4000000).run(raw_data)
 
 class Day < Puzzle
   @day = "Day #{DAY}"
@@ -23,7 +23,18 @@ class Day < Puzzle
       .map(&.map(&.split('=')))
       .map(&.map { |num| num[1].strip(',').to_i })
       .map { |pairs| {Vec2.new(pairs[0], pairs[1]), Vec2.new(pairs[2], pairs[3])} }
-    # .map(&.map {|p| xy_to_sensorspace(p) })
+  end
+
+  def row_coverage(row, sensor_ranges)
+    coverage = [] of Range(Int64, Int64)
+    sensor_ranges
+      .map { |pos, range| sensor_row_coverage(row, pos, range) }
+      .each do |r|
+        if r
+          coverage.push(r)
+        end
+      end
+    coverage
   end
 end
 
@@ -37,24 +48,16 @@ class Part1 < Day
   end
 
   def solve(data)
-    # dx = xy_to_sensorspace Vec2.new(1, 0)
     sensor_ranges = data.map { |sensor, beacon| {sensor, (beacon - sensor).one_norm} }
 
-    coverage = [] of Range(Int64, Int64)
-    sensor_ranges
-      .map { |pos, range| sensor_row_coverage(@row, pos, range) }
-      .each do |r|
-        if r
-          coverage.push(r)
-        end
-      end
+    coverage = merge_ranges row_coverage(@row, sensor_ranges)
 
     beacon_x = data
       .select { |_, beacon| beacon.y == @row }
       .map { |_, beacon| beacon.x }
       .to_set
 
-    (merge_ranges coverage)
+    coverage
       .map { |r| r.size - beacon_x.select { |x| r.covers? x }.size }
       .sum
   end
@@ -69,18 +72,28 @@ end
 
 class Part2 < Day
   @part = "Part 2"
+  @limit : Int64 = 0
+
+  def limit(limit)
+    @limit = limit
+    self
+  end
 
   def solve(data)
-    puts data
+    sensor_ranges = data.map { |sensor, beacon| {sensor, (beacon - sensor).one_norm} }
+    (0..@limit).each do |row|
+      coverage = merge_ranges row_coverage(row, sensor_ranges)
+      if coverage.size == 2
+        puts coverage
+        if coverage[1].begin > coverage[0].end
+          x = coverage[1].begin - 1
+        else
+          x = coverage[0].begin - 1
+        end
+        return x * 4000000 + row
+      end
+    end
   end
-end
-
-def xy_to_sensorspace(p)
-  Vec2.new p.x, p.y - p.x
-end
-
-def sensorspace_to_xp(q)
-  Vec2.new q.x, q.y + q.x
 end
 
 def merge_ranges(ranges : Array(Range(Int64, Int64))) : Array(Range(Int64, Int64))
@@ -90,13 +103,17 @@ def merge_ranges(ranges : Array(Range(Int64, Int64))) : Array(Range(Int64, Int64
 
   r0 = ranges[0]
 
-  affected, ranges = ranges.partition { |r| ranges_touch?(r, r0) }
+  affected, notaffected = ranges.partition { |r| ranges_touch?(r, r0) }
+
+  if affected.size <= 1
+    return ranges
+  end
 
   coords = affected.flat_map { |r| [r.begin, r.end] }
   new_range = coords.min..coords.max
 
-  ranges.push(new_range)
-  merge_ranges(ranges)
+  notaffected.push(new_range)
+  merge_ranges(notaffected)
 end
 
 def ranges_touch?(r1 : Range(Int64, Int64), r2 : Range(Int64, Int64))
