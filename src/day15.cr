@@ -81,19 +81,58 @@ class Part2 < Day
 
   def solve(data)
     sensor_ranges = data.map { |sensor, beacon| {sensor, (beacon - sensor).one_norm} }
-    (0..@limit).each do |row|
-      coverage = merge_ranges row_coverage(row, sensor_ranges)
-      if coverage.size == 2
-        puts coverage
-        if coverage[1].begin > coverage[0].end
-          x = coverage[1].begin - 1
-        else
-          x = coverage[0].begin - 1
+
+    sensor_ranges.each do |pos, r|
+      trace_perimeter(pos, r) do |pos|
+        if pos.x >= 0 && pos.x <= @limit && pos.y >= 0 && pos.y <= @limit
+          if !in_range?(pos, sensor_ranges)
+            return pos.x * 4000000 + pos.y
+          end
         end
-        return x * 4000000 + row
       end
     end
+
+    # This is the brute-fore solution, that applies Part 1 to each row.
+    #
+    # (0..@limit).each do |row|
+    #   coverage = merge_ranges row_coverage(row, sensor_ranges)
+    #   if coverage.size == 2
+    #     if coverage[1].begin > coverage[0].end
+    #       x = coverage[1].begin - 1
+    #     else
+    #       x = coverage[0].begin - 1
+    #     end
+    #     return x * 4000000 + row
+    #   end
+    # end
   end
+
+  def trace_perimeter(center, range)
+    pos = center + Vec2.new(range + 1, 0)
+    [Vec2.new(-1, 1), Vec2.new(-1, -1), Vec2.new(1, -1), Vec2.new(1, 1)].each do |d|
+      (range + 1).times do
+        pos += d
+        yield pos
+      end
+      d
+    end
+  end
+end
+
+#  o
+# o.o
+# o.x.o
+# o.o
+#  o
+
+def in_range?(pos, sensor_ranges)
+  sensor_ranges.each do |p, range|
+    dist = (p - pos).one_norm
+    if dist <= range
+      return true
+    end
+  end
+  false
 end
 
 def merge_ranges(ranges : Array(Range(Int64, Int64))) : Array(Range(Int64, Int64))
