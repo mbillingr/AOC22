@@ -67,19 +67,82 @@ class Day < Puzzle
     end
     vneighbors
   end
+
+  def all_distances(edges)
+    distances = edges.keys.map { |k| dijkstra k, edges }
+    distances = Hash.zip(edges.keys, distances)
+    distances
+  end
+
+  def dijkstra(source, graph)
+    inf = 999999999
+    dist = Hash(String, Int32).new
+    prev = Hash(String, String).new
+    queue = Set(String).new
+    graph.each_key do |k|
+      dist[k] = inf
+      prev[k] = ""
+      queue.add k
+    end
+    dist[source] = 0
+
+    while !queue.empty?
+      d, u = queue.map { |v| {dist[v], v} }.min
+      queue.delete u
+
+      graph[u].each do |n, du|
+        alt = d + du
+        if alt < dist[n]
+          dist[n] = alt
+          prev[n] = u
+        end
+      end
+    end
+    dist
+  end
 end
 
 class Part1 < Day
   @part = "Part 1"
   @seen = Hash(Tuple(String, Int32, Hash(String, Int32)), Int32).new
+  @rates = Hash(String, Int32).new
+  @distances = Hash(String, Hash(String, Int32)).new
 
   def solve(data)
     rates, edges = data
+    @rates = rates
     puts edges
-    brute_force("AA", 30, rates, edges)
+    @distances = all_distances edges
+    puts @distances
+
+    visitable_edges = edges.keys.to_set - ["AA"].to_set
+    recursive_search(30, ["AA"], visitable_edges)
   end
 
-  def brute_force(pos, remaining_minutes, rates, edges)
+  def recursive_search(time_remaining, visited, remaining)
+    current_node = visited[-1]
+
+    if time_remaining <= 0
+      return 0
+    end
+
+    flow = 0
+
+    if @rates[current_node] > 0
+      time_remaining -= 1
+      flow = time_remaining * @rates[current_node]
+    end
+
+    if !remaining.empty?
+      flow += remaining.map { |v|
+        recursive_search(time_remaining - @distances[current_node][v], visited + [v], remaining - [v].to_set)
+      }.max
+    end
+
+    flow
+  end
+
+  def brute_force(pos, come_from, remaining_minutes, rates, edges)
     if remaining_minutes <= 0
       return 0
     end
@@ -92,15 +155,17 @@ class Part1 < Day
     # don't turn on
     flow1 = edges[pos]
       .each
-      .map { |tgt, len| brute_force(tgt, remaining_minutes - len, rates, edges) }
-      .max
+      .select { |tgt| tgt != come_from } # don't just turn back
+      .map { |tgt| brute_force(tgt, pos, remaining_minutes - 1, rates, edges) }
+      .max?
+    flow1 = flow1 ? flow1 : 0
 
     # turn on
     guaranteed_flow = rates[pos] * (remaining_minutes - 1)
     if guaranteed_flow == 0
       best_flow = flow1
     else
-      flow2 = guaranteed_flow + brute_force(pos, remaining_minutes - 1, rates.merge({pos => 0}), edges)
+      flow2 = guaranteed_flow + brute_force(pos, "", remaining_minutes - 1, rates.merge({pos => 0}), edges)
       best_flow = [flow1, flow2].max
     end
 
@@ -117,45 +182,79 @@ class Part2 < Day
   def solve(data)
     rates, edges = data
     puts edges
-    brute_force("AA", "AA", 26, rates, edges)
+    # brute_force("AA", "", "AA", "", 26, rates, edges)
   end
 
-  def brute_force(pos1, pos2, remaining_minutes, rates, edges)
+  def brute_force(pos1, come_from1, pos2, come_from2, remaining_minutes, rates, edges)
     if remaining_minutes <= 0
       return 0
     end
 
-    cached = @seen[{pos, pos2, remaining_minutes, rates}]?
+    cached = @seen[{pos1, pos2, remaining_minutes, rates}]?
     if cached
       return cached
     end
 
     # don't turn on
-    flow1 = edges[pos1].each
-      .map do |tgt, len|
-        edges[pos1].each
-          .map do |tgt, len|
-            brute_force(tgt, pos2, remaining_minutes - len, rates, edges)
-          end
-      end
-      .max
+    flow1 = edges[pos1]
+      .each
+      .select { |tgt| tgt != come_from1 } # don't just turn back
+      .map { |tgt| brute_force2(pos2, come_from2, tgt, pos1, remaining_minutes, rates, edges) }
+      .max?
+    flow1 = flow1 ? flow1 : 0
 
     # turn on
-    guaranteed_flow = rates[pos] * (remaining_minutes - 1)
+    guaranteed_flow = rates[pos1] * (remaining_minutes - 1)
+
     if guaranteed_flow == 0
       best_flow = flow1
     else
-      flow2 = guaranteed_flow + brute_force(pos, pos2, remaining_minutes - 1, rates.merge({pos => 0}), edges)
+      flow2 = guaranteed_flow + brute_force2(pos2, come_from2, pos1, "", remaining_minutes, rates.merge({pos1 => 0}), edges)
       best_flow = [flow1, flow2].max
     end
 
-    @seen[{pos, remaining_minutes, rates}] = best_flow
+    @seen[{pos1, pos2, remaining_minutes, rates}] = best_flow
+
+    best_flow
+  end
+
+  def brute_force2(pos1, come_from1, pos2, come_from2, remaining_minutes, rates, edges)
+    if remaining_minutes <= 0
+      return 0
+    end
+
+    cached = @seen[{pos1, pos2, remaining_minutes, rates}]?
+    if cached
+      return cached
+    end
+
+    # don't turn on
+    flow1 = edges[pos1]
+      .each
+      .select { |tgt| tgt != come_from1 } # don't just turn back
+      .map { |tgt| brute_force(pos2, come_from2, tgt, pos1, remaining_minutes - 1, rates, edges) }
+      .max?
+    flow1 = flow1 ? flow1 : 0
+
+    # turn on
+    guaranteed_flow = rates[pos1] * (remaining_minutes - 1)
+
+    if guaranteed_flow == 0
+      best_flow = flow1
+    else
+      flow2 = guaranteed_flow + brute_force(pos2, come_from2, pos1, "", remaining_minutes - 1, rates.merge({pos1 => 0}), edges)
+      best_flow = [flow1, flow2].max
+    end
+
+    @seen[{pos1, pos2, remaining_minutes, rates}] = best_flow
 
     best_flow
   end
 end
 
-# def flow_upper_limit(remaining_minutes, closed_rates)
+def flow_upper_limit(remaining_minutes, closed_rates)
+  closed_rates.values.sum * remaining_minutes
+end
 
 EXAMPLE = "Valve AA has flow rate=0; tunnels lead to valves DD, II, BB
 Valve BB has flow rate=13; tunnels lead to valves CC, AA
