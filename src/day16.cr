@@ -37,8 +37,6 @@ class Day < Puzzle
       .each_key
       .map { |node| virtual_neighbors(node, rates, edges) }
 
-    puts edges
-
     null_tunnels = rates.select { |k| rates[k] == 0 }
     null_tunnels.reject!("AA")
 
@@ -100,24 +98,6 @@ class Day < Puzzle
     end
     dist
   end
-end
-
-class Part1 < Day
-  @part = "Part 1"
-  @seen = Hash(Tuple(String, Int32, Hash(String, Int32)), Int32).new
-  @rates = Hash(String, Int32).new
-  @distances = Hash(String, Hash(String, Int32)).new
-
-  def solve(data)
-    rates, edges = data
-    @rates = rates
-    puts edges
-    @distances = all_distances edges
-    puts @distances
-
-    visitable_edges = edges.keys.to_set - ["AA"].to_set
-    recursive_search(30, ["AA"], visitable_edges)
-  end
 
   def recursive_search(time_remaining, visited, remaining)
     current_node = visited[-1]
@@ -141,114 +121,60 @@ class Part1 < Day
 
     flow
   end
+end
 
-  def brute_force(pos, come_from, remaining_minutes, rates, edges)
-    if remaining_minutes <= 0
-      return 0
-    end
+class Part1 < Day
+  @part = "Part 1"
+  @rates = Hash(String, Int32).new
+  @distances = Hash(String, Hash(String, Int32)).new
 
-    cached = @seen[{pos, remaining_minutes, rates}]?
-    if cached
-      return cached
-    end
+  def solve(data)
+    rates, edges = data
+    @rates = rates
+    @distances = all_distances edges
 
-    # don't turn on
-    flow1 = edges[pos]
-      .each
-      .select { |tgt| tgt != come_from } # don't just turn back
-      .map { |tgt| brute_force(tgt, pos, remaining_minutes - 1, rates, edges) }
-      .max?
-    flow1 = flow1 ? flow1 : 0
-
-    # turn on
-    guaranteed_flow = rates[pos] * (remaining_minutes - 1)
-    if guaranteed_flow == 0
-      best_flow = flow1
-    else
-      flow2 = guaranteed_flow + brute_force(pos, "", remaining_minutes - 1, rates.merge({pos => 0}), edges)
-      best_flow = [flow1, flow2].max
-    end
-
-    @seen[{pos, remaining_minutes, rates}] = best_flow
-
-    best_flow
+    visitable_edges = edges.keys.to_set - ["AA"].to_set
+    recursive_search(30, ["AA"], visitable_edges)
   end
 end
 
 class Part2 < Day
   @part = "Part 2"
-  @seen = Hash(Tuple(String, String, Int32, Hash(String, Int32)), Int32).new
+  @rates = Hash(String, Int32).new
+  @distances = Hash(String, Hash(String, Int32)).new
 
   def solve(data)
     rates, edges = data
-    puts edges
-    # brute_force("AA", "", "AA", "", 26, rates, edges)
+    @rates = rates
+    @distances = all_distances edges
+
+    visitable_edges = edges.keys.to_set - ["AA"].to_set
+
+    maximum = 0
+
+    all_partitions(visitable_edges).to_a.reverse.map do |a|
+      b = visitable_edges - a
+      flow1 = recursive_search(26, ["AA"], a)
+      flow2 = recursive_search(26, ["AA"], b)
+      flow = flow1 + flow2
+      if flow > maximum
+        maximum = flow
+        puts "maximum so far: #{flow}"
+      end
+      flow
+    end.max
   end
 
-  def brute_force(pos1, come_from1, pos2, come_from2, remaining_minutes, rates, edges)
-    if remaining_minutes <= 0
-      return 0
+  def all_partitions(set)
+    set = set.to_a
+    partitions = Set(Set(String)).new
+    (1..set.size/2).map do |i|
+      puts "building partitions #{i} / #{set.size/2}"
+      set.each_permutation(i) do |p|
+        partitions.add(p.to_set)
+      end
     end
-
-    cached = @seen[{pos1, pos2, remaining_minutes, rates}]?
-    if cached
-      return cached
-    end
-
-    # don't turn on
-    flow1 = edges[pos1]
-      .each
-      .select { |tgt| tgt != come_from1 } # don't just turn back
-      .map { |tgt| brute_force2(pos2, come_from2, tgt, pos1, remaining_minutes, rates, edges) }
-      .max?
-    flow1 = flow1 ? flow1 : 0
-
-    # turn on
-    guaranteed_flow = rates[pos1] * (remaining_minutes - 1)
-
-    if guaranteed_flow == 0
-      best_flow = flow1
-    else
-      flow2 = guaranteed_flow + brute_force2(pos2, come_from2, pos1, "", remaining_minutes, rates.merge({pos1 => 0}), edges)
-      best_flow = [flow1, flow2].max
-    end
-
-    @seen[{pos1, pos2, remaining_minutes, rates}] = best_flow
-
-    best_flow
-  end
-
-  def brute_force2(pos1, come_from1, pos2, come_from2, remaining_minutes, rates, edges)
-    if remaining_minutes <= 0
-      return 0
-    end
-
-    cached = @seen[{pos1, pos2, remaining_minutes, rates}]?
-    if cached
-      return cached
-    end
-
-    # don't turn on
-    flow1 = edges[pos1]
-      .each
-      .select { |tgt| tgt != come_from1 } # don't just turn back
-      .map { |tgt| brute_force(pos2, come_from2, tgt, pos1, remaining_minutes - 1, rates, edges) }
-      .max?
-    flow1 = flow1 ? flow1 : 0
-
-    # turn on
-    guaranteed_flow = rates[pos1] * (remaining_minutes - 1)
-
-    if guaranteed_flow == 0
-      best_flow = flow1
-    else
-      flow2 = guaranteed_flow + brute_force(pos2, come_from2, pos1, "", remaining_minutes - 1, rates.merge({pos1 => 0}), edges)
-      best_flow = [flow1, flow2].max
-    end
-
-    @seen[{pos1, pos2, remaining_minutes, rates}] = best_flow
-
-    best_flow
+    partitions
   end
 end
 
