@@ -1,6 +1,6 @@
-struct Vec2
-  getter x : Int64
-  getter y : Int64
+struct Vec2(T)
+  getter x : T
+  getter y : T
 
   def initialize(@x, @y)
   end
