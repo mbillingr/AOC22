@@ -7,13 +7,13 @@ struct Vec2(T)
 
   def initialize(direction : String)
     if direction == "R"
-      @x, @y = 1i64, 0i64
+      @x, @y = 1, 0
     elsif direction == "L"
-      @x, @y = -1i64, 0i64
+      @x, @y = -1, 0
     elsif direction == "U"
-      @x, @y = 0i64, 1i64
+      @x, @y = 0, 1
     elsif direction == "D"
-      @x, @y = 0i64, -1i64
+      @x, @y = 0, -1
     else
       raise "Invalid direction #{direction}"
     end
@@ -66,5 +66,13 @@ struct Vec2(T)
       Vec2.new(@x, @y+1),
       Vec2.new(@x, @y-1),
     ]
+  end
+
+  def rotate_right
+    Vec2.new(@y, -@x)
+  end
+
+  def rotate_left
+    Vec2.new(-@y, @x)
   end
 end
