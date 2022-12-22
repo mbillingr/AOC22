@@ -43,19 +43,18 @@ class Day < Puzzle
 
     pos = Vec2.new(field[1].index('.').as T, 1)
     heading = Vec2(T).new("R")
+    handedness = "R"
     (0..).each do |turn|
       numbers[turn].times do
-        last_pos = pos
-        last_heading = heading
+        last_pos, last_heading = pos, heading
         pos += heading
 
         if field[pos.y][pos.x] == ' '
-          pos, heading = wrap_around(pos, heading, field)
+          pos, heading, handedness = wrap_around(pos, heading, handedness, field)
         end
 
         if field[pos.y][pos.x] == '#'
-          pos = last_pos
-          heading = last_heading
+          pos, heading = last_pos, last_heading
           break
         end
       end
@@ -66,7 +65,7 @@ class Day < Puzzle
       end
 
       puts "#{turns[turn]}"
-      if turns[turn] == "R"
+      if turns[turn] == handedness
         heading = heading.rotate_left
       else
         heading = heading.rotate_right
@@ -97,21 +96,22 @@ alias T = Int32
 class Part1 < Day
   @part = "Part 1"
 
-  def wrap_around(pos, heading, field)
+  def wrap_around(pos, heading, handedness, field)
     pos -= heading
     while field[pos.y][pos.x] != ' '
       pos -= heading
     end
     pos += heading
 
-    {pos, heading}
+    {pos, heading, handedness}
   end
 end
 
 class Part2 < Day
   @part = "Part 2"
 
-  def wrap_around(pos, heading, field)
+  def wrap_around(pos, heading, handedness, field)
+    h = handedness
     if field.size < 50
       # the example
       if pos.x == 13 && pos.y < 5
@@ -134,34 +134,37 @@ class Part2 < Day
       #   3
       #  45
       #  6
-      p = portal(pos, 50, 1..50, 1, 150..101) ||     # 1->4
-          portal(pos, 51..100, 0, 1, 151..200) ||    # 1->6
-          portal(pos, 101..150, 51, 100, 51..100) || # 2->3
-          portal(pos, 151, 1..50, 100, 150..101) ||  # 2->5
-          portal(pos, 101..150, 0, 1..50, 200) ||    # 2->6
-          portal(pos, 101, 51..100, 101..150, 50) || # 3->2
-          portal(pos, 50, 51..100, 1..50, 101) ||    # 3->4
-          portal(pos, 0, 101..150, 51, 50..1) ||     # 4->1
-          portal(pos, 1..50, 100, 51, 51..100) ||    # 4->3
-          portal(pos, 101, 101..150, 150, 50..1) ||  # 5->2
-          portal(pos, 51..100, 151, 50, 151..200) || # 5->6
-          portal(pos, 0, 151..200, 51..100, 1) ||    # 6->1
-          portal(pos, 1..50, 201, 101..150, 1) ||    # 6->2
-          portal(pos, 51, 151..200, 51..100, 150)    # 6->5
+
+      # This portal order works, but actually the implementation is broken
+      # because it does not take into account that portals may overlap in certain corners.
+      p = portal(pos, h, 51, 151..200, 51..100, 150) || # 6->5
+          portal(pos, h, 1..50, 201, 101..150, 1) ||    # 6->2
+          portal(pos, h, 0, 151..200, 51..100, 1) ||    # 6->1
+          portal(pos, h, 51..100, 151, 50, 151..200) || # 5->6
+          portal(pos, h, 101, 101..150, 150, 50..1) ||  # 5->2
+          portal(pos, h, 1..50, 100, 51, 51..100) ||    # 4->3
+          portal(pos, h, 0, 101..150, 51, 50..1) ||     # 4->1
+          portal(pos, h, 50, 51..100, 1..50, 101) ||    # 3->4
+          portal(pos, h, 101, 51..100, 101..150, 50) || # 3->2
+          portal(pos, h, 51..100, 0, 1, 151..200) ||    # 1->6
+          portal(pos, h, 101..150, 0, 1..50, 200) ||    # 2->6
+          portal(pos, h, 151, 1..50, 100, 150..101) ||  # 2->5
+          portal(pos, h, 101..150, 51, 100, 51..100) || # 2->3
+          portal(pos, h, 50, 1..50, 1, 150..101)        # 1->4
       if p
-        pos, heading = p
+        pos, heading, handedness = p
       else
         raise pos.to_s
       end
     end
-    {pos, heading}
+    {pos, heading, handedness}
   end
 end
 
-def portal(pos, x_in : Number | Range, y_in : Number | Range, x_out : Number | Range, y_out : Number | Range)
+def portal(pos, h, x_in : Number | Range, y_in : Number | Range, x_out : Number | Range, y_out : Number | Range)
   offset = portal_in(pos, x_in, y_in)
   if offset
-    portal_out(offset, x_out, y_out)
+    portal_out(offset, h, x_out, y_out)
   end
 end
 
@@ -185,11 +188,12 @@ def portal_in(pos, x_in : Range, y_in : Number)
   end
 end
 
-def portal_out(offset : Number, x_out : Number, y_out : Range)
+def portal_out(offset : Number, h, x_out : Number, y_out : Range)
   if y_out.end > y_out.begin
     pos = Vec2.new(x_out, y_out.begin + offset)
   else
     pos = Vec2.new(x_out, y_out.begin - offset)
+    # h = {"L" => "R", "R" => "L"}[h]
   end
 
   if x_out % 2 == 0
@@ -198,14 +202,15 @@ def portal_out(offset : Number, x_out : Number, y_out : Range)
     heading = Vec2.new(1, 0)
   end
 
-  {pos, heading}
+  {pos, heading, h}
 end
 
-def portal_out(offset : Number, x_out : Range, y_out : Number)
+def portal_out(offset : Number, h, x_out : Range, y_out : Number)
   if x_out.end > x_out.begin
     pos = Vec2.new(x_out.begin + offset, y_out)
   else
     pos = Vec2.new(x_out.begin - offset, y_out)
+    # h = {"L" => "R", "R" => "L"}[h]
   end
 
   if y_out % 2 == 0
@@ -214,7 +219,7 @@ def portal_out(offset : Number, x_out : Range, y_out : Number)
     heading = Vec2.new(0, 1)
   end
 
-  {pos, heading}
+  {pos, heading, h}
 end
 
 EXAMPLE = "        ...#
