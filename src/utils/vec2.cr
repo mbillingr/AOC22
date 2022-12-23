@@ -68,6 +68,19 @@ struct Vec2(T)
     ]
   end
 
+  def eight_neighbors
+    return [
+      Vec2.new(@x+1, @y),
+      Vec2.new(@x-1, @y),
+      Vec2.new(@x, @y+1),
+      Vec2.new(@x, @y-1),
+      Vec2.new(@x+1, @y+1),
+      Vec2.new(@x-1, @y-1),
+      Vec2.new(@x-1, @y+1),
+      Vec2.new(@x+1, @y-1),
+    ]
+  end
+
   def rotate_right
     Vec2.new(@y, -@x)
   end
